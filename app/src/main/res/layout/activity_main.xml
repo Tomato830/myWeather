@@ -7,17 +7,36 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/btn"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="click"
-        android:textSize="50dp"/>
+        android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/textv"
+        <EditText
+            android:id="@+id/search_city"
+            android:hint="输入城市"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:textSize="30dp"/>
+
+        <Button
+            android:id="@+id/btn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="搜索"
+            android:textSize="30dp"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="something"
-        android:textSize="50dp"/>
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/res"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"/>
+
+    </LinearLayout>
 </androidx.appcompat.widget.LinearLayoutCompat>

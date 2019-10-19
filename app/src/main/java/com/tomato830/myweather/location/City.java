@@ -1,117 +1,97 @@
 package com.tomato830.myweather.location;
 
-import android.app.Activity;
+
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Message;
-import android.util.Log;
+import android.widget.Toast;
 
-import com.tomato830.myweather.HTTP.http;
-import com.tomato830.myweather.MainActivity;
+import com.tomato830.myweather.HTTP.Http;
+import com.tomato830.myweather.weather.Basic;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.logging.Handler;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.IOException;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.OkHttpClient;
+
 import okhttp3.Response;
 
 public class City {
-    //城市名称
-    private String city;
-    //城市ID
-    private String cid;
-    //上级城市
-    private String parent_city;
-    //所属行政区域
-    private String admin_area;
-    //所属国家
-    private String cnty;
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getCid() {
-        return cid;
-    }
-
-    public void setCid(String cid) {
-        this.cid = cid;
-    }
-
-    public String getParent_city() {
-        return parent_city;
-    }
-
-    public void setParent_city(String parent_city) {
-        this.parent_city = parent_city;
-    }
-
-    public String getAdmin_area() {
-        return admin_area;
-    }
-
-    public void setAdmin_area(String admin_area) {
-        this.admin_area = admin_area;
-    }
-
-    public String getCnty() {
-        return cnty;
-    }
-
-    public void setCnty(String cnty) {
-        this.cnty = cnty;
-    }
-
+    public Basic basic;
+    public String status;
 
     //搜索城市
-    public static ArrayList<City> search(String s,final Context context){
-        ArrayList<City> cities=new ArrayList<>();
-        String key="d2f5e8db4d094001b2662559e0d6539c";
+    public static void search(String s, final Context context) {
+        String path = null;
         try {
-            String path = "https://search.heweather.net/find?"+"location="+URLEncoder.encode(s,"utf-8")+"&key="+key;
-
-            http.httpRequest(path, new Callback() {
-                @Override
-                public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                    e.printStackTrace();
-                }
-
-                @Override
-                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                    String json=response.body().string();
-                    SharedPreferences sp=context.getSharedPreferences("data",Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor= sp.edit();
-                    editor.putString("json",json);
-                    editor.apply();
-                }
-            });
+            path = "https://search.heweather.net/find?" + "location=" + URLEncoder.encode(s, "utf-8")
+                    + "&key=d2f5e8db4d094001b2662559e0d6539c";
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        return cities;
+        //访问搜索API,将结果存入searchCities文件
+        Http.httpRequest(path, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                e.printStackTrace();
+                Toast.makeText(context, "搜索城市失败,请重试", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String json = response.body().string();
+                try {
+                    //得到basic数组和status
+                    JSONObject jsonObject = new JSONObject(json).getJSONArray("HeWeather6").getJSONObject(0);
+                    //status=ok,将basic存入文件
+                    if ("ok".equals(jsonObject.optString("status"))) {
+                        SharedPreferences sp = context.getSharedPreferences("searchCities", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sp.edit();
+                        editor.putString("searchCities", jsonObject.optString("basic"));
+                        editor.apply();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
+
     //获取热门搜索城市
-    public static ArrayList<City> getTopCity(){
-        ArrayList<City> cities=new ArrayList<>();
+    public static void getTopCity(final Context context) {
+        String path = "https://search.heweather.net/top?" + "group=world"
+                + "&key=d2f5e8db4d094001b2662559e0d6539c";
+        Http.httpRequest(path, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                e.printStackTrace();
+                Toast.makeText(context, "获取热门城市失败", Toast.LENGTH_LONG).show();
+            }
 
-
-        return cities;
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String json = response.body().string();
+                try {
+                    //得到basic数组和status
+                    JSONObject jsonObject = new JSONObject(json).getJSONArray("HeWeather6").getJSONObject(0);
+                    //status=ok,将basic存入文件
+                    if ("ok".equals(jsonObject.optString("status"))) {
+                        SharedPreferences sp = context.getSharedPreferences("topCities", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sp.edit();
+                        editor.putString("topCities", jsonObject.optString("basic"));
+                        editor.apply();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
 
