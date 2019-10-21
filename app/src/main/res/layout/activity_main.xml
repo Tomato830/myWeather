@@ -11,8 +11,17 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        app:title="myWeather">
+        android:background="@color/Weather_blue"
+        app:title="myWeather"
+        android:textAlignment="center"
+        app:titleTextColor="@color/weather_white">
 
     </androidx.appcompat.widget.Toolbar>
+
+    <TextView
+        android:id="@+id/tv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="123"/>
+
 </androidx.appcompat.widget.LinearLayoutCompat>

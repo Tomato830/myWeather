@@ -9,5 +9,5 @@ public class Now {
     //天气状况代码
     public String cond_code;
     //天气描述
-    public String txt;
+    public String cond_txt;
 }

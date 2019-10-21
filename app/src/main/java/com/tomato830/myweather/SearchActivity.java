@@ -2,11 +2,17 @@ package com.tomato830.myweather;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -43,25 +49,89 @@ public class SearchActivity extends AppCompatActivity {
 
     ListView cityList;
 
+    protected static final int GETTOPCITIESERROR = 1;
+    protected static final int GETTOPCITIESSUCCEES=2;
+    protected static final int SEARCHCID=2;
+    protected static final int GETSEARCHCITIESSUCCEES=3;
+
+    @SuppressLint("HandlerLeak")
+    private final Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case GETTOPCITIESERROR:
+                    Toast.makeText(SearchActivity.this, "获取热门城市失败", Toast.LENGTH_LONG).show();
+                    break;
+                case GETTOPCITIESSUCCEES:
+                    SharedPreferences sp=getSharedPreferences("topCities",MODE_PRIVATE);
+                    City city=handleCityResponse(sp.getString("topCities",""));
+
+                    //将City转为String[]
+                    final String[] topcities_txt=new String[city.basic.size()];
+                    final String[] topcities_cid=new String[city.basic.size()];
+                    for (int i=0;i<city.basic.size();++i){
+                        topcities_txt[i]=city.basic.get(i).location+'-'+city.basic.get(i).parent_city+','+city.basic.get(i).admin_area;
+                        topcities_cid[i]=city.basic.get(i).cid;
+                    }
+
+                    ArrayAdapter<String> adapter=new ArrayAdapter<>(SearchActivity.this,R.layout.listview,topcities_txt);
+                    cityList.setAdapter(adapter);
+
+                    cityList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //将点击结果返回上一层
+                            Intent intent=new Intent();
+                            intent.putExtra("searchCid",topcities_cid[position]);
+                            setResult(SEARCHCID,intent);
+                        }
+                    });
+                    break;
+                case GETSEARCHCITIESSUCCEES:
+                    SharedPreferences sharedPreferences=getSharedPreferences("searchCities",MODE_PRIVATE);
+                    City searchCity=handleCityResponse(sharedPreferences.getString("searchCities",""));
+
+                    //将City转为String[]
+                    final String[] searchcities_txt=new String[searchCity.basic.size()];
+                    final String[] searchcities_cid=new String[searchCity.basic.size()];
+                    for (int i=0;i<searchCity.basic.size();++i){
+                        searchcities_txt[i]=searchCity.basic.get(i).location+'-'+searchCity.basic.get(i).parent_city+','+searchCity.basic.get(i).admin_area;
+                        searchcities_cid[i]=searchCity.basic.get(i).cid;
+                    }
+
+                    ArrayAdapter<String> adapter_search=new ArrayAdapter<>(SearchActivity.this,R.layout.listview,searchcities_txt);
+                    cityList.setAdapter(adapter_search);
+
+                    cityList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //将点击结果返回上一层
+                            Intent intent=new Intent();
+                            intent.putExtra("searchCid",searchcities_cid[position]);
+                            setResult(SEARCHCID,intent);
+                        }
+                    });
+                    break;
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
         //组件初始化
-        search_input=(EditText) findViewById(R.id.search_input);
-        search_btn=(Button) findViewById(R.id.search_btn);
-        cityList=(ListView) findViewById(R.id.dispCities);
-        city_hint=(TextView) findViewById(R.id.city_hint);
+        search_input = (EditText) findViewById(R.id.search_input);
+        search_btn = (Button) findViewById(R.id.search_btn);
+        cityList = (ListView) findViewById(R.id.dispCities);
+        city_hint = (TextView) findViewById(R.id.city_hint);
 
         //获取热门城市
         getTopCity(this);
-        SharedPreferences sp=getSharedPreferences("searchCities",MODE_PRIVATE);
-        //ArrayList<City> cities=handleCityResponse(sp.getString("topcities",""));
-        int num=handleCityResponse(sp.getString("topCities",""));
-        Log.v(Integer.toString(num),"cities个数");
+
+        //int num=handleCityResponse(sp.getString("topCities",""));
 
         //设置ListView的适配器
-        //ArrayAdapter<City> adapter=new ArrayAdapter<City>(this,R.layout.listview,cities);
+        //ArrayAdapter<String > adapter=new ArrayAdapter<String>(this,R.layout.listview,data);
         //cityList.setAdapter(adapter);
 
         //设置监听器
@@ -69,14 +139,13 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 city_hint.setText("   搜索结果:");
-                searchCity(search_input.getText().toString(),SearchActivity.this);
-
+                searchCity(search_input.getText().toString(), SearchActivity.this);
             }
         });
     }
 
     //搜索城市
-    public static void searchCity(String s, final Context context) {
+    public void searchCity(String s, final Context context) {
         String path = null;
         try {
             path = "https://search.heweather.net/find?" + "location=" + URLEncoder.encode(s, "utf-8")
@@ -94,26 +163,28 @@ public class SearchActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                //返回的完整的json文件
                 String json = response.body().string();
-                try {
-                    //得到basic数组和status
-                    JSONObject jsonObject = new JSONObject(json).getJSONArray("HeWeather6").getJSONObject(0);
-                    //status=ok,将basic存入文件
-                    if ("ok".equals(jsonObject.optString("status"))) {
-                        SharedPreferences sp = context.getSharedPreferences("searchCities", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sp.edit();
-                        editor.putString("searchCities", jsonObject.optString("basic"));
-                        editor.apply();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                //处理json文件
+                City city = handleCityResponse(json);
+
+                //
+                if (city != null) {
+                    SharedPreferences sp = context.getSharedPreferences("searchCities", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putString("searchCities", json);
+                    editor.apply();
+
+                    Message msg = new Message();
+                    msg.what = GETSEARCHCITIESSUCCEES;
+                    handler.sendMessage(msg);
                 }
             }
         });
     }
 
     //获取热门搜索城市
-    public static void getTopCity(final Context context) {
+    public void getTopCity(final Context context) {
         String path = "https://search.heweather.net/top?" + "group=world"
                 + "&key=d2f5e8db4d094001b2662559e0d6539c";
         Http.httpRequest(path, new Callback() {
@@ -125,32 +196,54 @@ public class SearchActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String json = response.body().string();
-                try {
-                    //得到basic数组和status
-                    JSONObject jsonObject = new JSONObject(json).getJSONArray("HeWeather6").getJSONObject(0);
-                    //status=ok,将basic存入文件
-                    if ("ok".equals(jsonObject.optString("status"))) {
-                        SharedPreferences sp = context.getSharedPreferences("topCities", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sp.edit();
-                        editor.putString("topCities", jsonObject.optString("basic"));
-                        editor.apply();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                final String json = response.body().string();
+
+                final City city = handleCityResponse(json);
+
+                if (city != null) {
+                    SharedPreferences sp = context.getSharedPreferences("topCities", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sp.edit();
+                    editor.putString("topCities", json);
+                    editor.apply();
+
+                    Message msg = new Message();
+                    msg.what = GETTOPCITIESSUCCEES;
+                    handler.sendMessage(msg);
                 }
             }
         });
     }
 
-    public static int handleCityResponse(String response){
-        Gson gson=new Gson();
-        ArrayList<City> cities=new ArrayList<>();
+
+    //处理返回的城市的json文件
+    public City handleCityResponse(String response) {
+        Gson gson = new Gson();
+
         try {
-            cities = gson.fromJson(response,new TypeToken<ArrayList<City>>(){}.getType());
+            //解析json对象
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            jsonObject = jsonArray.getJSONObject(0);
+
+            if (!"ok".equals(jsonObject.optString("status"))) {
+                return null;
+            }
+            response = jsonObject.toString();
+
+            //gson解析basic数组
+            City city = gson.fromJson(response, City.class);
+            return city;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return cities.size();
+        //异常退出,跳到这里
+        return null;
+    }
+
+    private void showCitiesInfo(City[] cities) {
+
+
+
+
     }
 }
