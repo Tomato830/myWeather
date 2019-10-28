@@ -10,4 +10,14 @@ public class Now {
     public String cond_code;
     //天气描述
     public String cond_txt;
+
+    @Override
+    public String toString() {
+        return "Now{" +
+                "fl=" + fl +
+                ", tmp=" + tmp +
+                ", cond_code='" + cond_code + '\'' +
+                ", cond_txt='" + cond_txt + '\'' +
+                '}';
+    }
 }

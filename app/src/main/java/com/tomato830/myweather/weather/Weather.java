@@ -9,6 +9,7 @@ public class Weather {
     public String status;
     //请求天气类型
     public Now now;
-    public ArrayList<Hourly> hourlyArrayList;
-    public ArrayList<Forecast> forecastArrayList;
+    public ArrayList<Hourly> hourly;
+    public ArrayList<Forecast> daily_forecast;
+    public ArrayList<Lifestyle> lifestyle;
 }

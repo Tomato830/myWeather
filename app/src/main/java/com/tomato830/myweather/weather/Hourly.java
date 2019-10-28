@@ -7,7 +7,7 @@ public class Hourly {
     //温度
     public int tmp;
     //降雨概率
-    public int precent;
+    public int pop;
     //天气代码
     public String cond_code;
     //天气状况

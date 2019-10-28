@@ -1,6 +1,7 @@
 package com.tomato830.myweather;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -17,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,6 +51,10 @@ public class SearchActivity extends AppCompatActivity {
 
     ListView cityList;
 
+    //ProgressBar progressBar;
+
+    SwipeRefreshLayout swipeRefreshLayout;
+
     protected static final int GETTOPCITIESERROR = 1;
     protected static final int GETTOPCITIESSUCCEES=2;
     protected static final int SEARCHCID=2;
@@ -59,9 +65,11 @@ public class SearchActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case GETTOPCITIESERROR:
+                    //热门城市获取失败
                     Toast.makeText(SearchActivity.this, "获取热门城市失败", Toast.LENGTH_LONG).show();
                     break;
                 case GETTOPCITIESSUCCEES:
+                    //热门城市获取成功
                     SharedPreferences sp=getSharedPreferences("topCities",MODE_PRIVATE);
                     City city=handleCityResponse(sp.getString("topCities",""));
 
@@ -83,10 +91,14 @@ public class SearchActivity extends AppCompatActivity {
                             Intent intent=new Intent();
                             intent.putExtra("searchCid",topcities_cid[position]);
                             setResult(SEARCHCID,intent);
+
+                            //
+                            SearchActivity.this.finish();
                         }
                     });
                     break;
                 case GETSEARCHCITIESSUCCEES:
+                    //搜索城市成功
                     SharedPreferences sharedPreferences=getSharedPreferences("searchCities",MODE_PRIVATE);
                     City searchCity=handleCityResponse(sharedPreferences.getString("searchCities",""));
 
@@ -98,16 +110,25 @@ public class SearchActivity extends AppCompatActivity {
                         searchcities_cid[i]=searchCity.basic.get(i).cid;
                     }
 
+                    //搜索完毕,关闭progressBar
+                    //progressBar.setVisibility(View.GONE);
+
                     ArrayAdapter<String> adapter_search=new ArrayAdapter<>(SearchActivity.this,R.layout.listview,searchcities_txt);
                     cityList.setAdapter(adapter_search);
+
+                    Toast.makeText(SearchActivity.this,"返回...",Toast.LENGTH_SHORT).show();
 
                     cityList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                             //将点击结果返回上一层
-                            Intent intent=new Intent();
-                            intent.putExtra("searchCid",searchcities_cid[position]);
-                            setResult(SEARCHCID,intent);
+                            Intent intent = new Intent();
+                            intent.putExtra("searchCid", searchcities_cid[position]);
+                            setResult(SEARCHCID, intent);
+
+                            //SearchActivity结束,返回MainActivity
+                            SearchActivity.this.finish();
                         }
                     });
                     break;
@@ -125,20 +146,27 @@ public class SearchActivity extends AppCompatActivity {
         cityList = (ListView) findViewById(R.id.dispCities);
         city_hint = (TextView) findViewById(R.id.city_hint);
 
+        swipeRefreshLayout=(SwipeRefreshLayout) findViewById(R.id.swipe_container);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        });
+
         //获取热门城市
         getTopCity(this);
-
-        //int num=handleCityResponse(sp.getString("topCities",""));
-
-        //设置ListView的适配器
-        //ArrayAdapter<String > adapter=new ArrayAdapter<String>(this,R.layout.listview,data);
-        //cityList.setAdapter(adapter);
 
         //设置监听器
         search_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                city_hint.setText("   搜索结果:");
+                city_hint.setText("搜索结果:");
                 searchCity(search_input.getText().toString(), SearchActivity.this);
             }
         });
@@ -146,6 +174,10 @@ public class SearchActivity extends AppCompatActivity {
 
     //搜索城市
     public void searchCity(String s, final Context context) {
+
+        //搜索中,显示progressBar
+        //progressBar.setVisibility(View.VISIBLE);
+
         String path = null;
         try {
             path = "https://search.heweather.net/find?" + "location=" + URLEncoder.encode(s, "utf-8")
@@ -191,7 +223,12 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 e.printStackTrace();
-                Toast.makeText(context, "获取热门城市失败", Toast.LENGTH_LONG).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(context, "获取热门城市失败", Toast.LENGTH_LONG).show();
+                    }
+                });
             }
 
             @Override

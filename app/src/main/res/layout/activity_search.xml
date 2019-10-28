@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".SearchActivity"
+    android:background="#fff"
     android:orientation="vertical">
 
     <LinearLayout
@@ -26,25 +27,35 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:textSize="30dp"
+            android:background="#fff"
             android:text="搜索"/>
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/city_hint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="   热门城市:"/>
+            android:textSize="20dp"
+            android:text="热门城市:"/>
 
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/dispCities"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/dispCities"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>

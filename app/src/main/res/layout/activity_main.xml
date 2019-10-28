@@ -5,23 +5,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/blue"
     tools:context=".MainActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/Weather_blue"
-        app:title="myWeather"
+        android:background="@color/blue"
         android:textAlignment="center"
-        app:titleTextColor="@color/weather_white">
+        app:title="myWeather"
+        app:titleTextColor="#fff">
 
     </androidx.appcompat.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/tv"
+    <fragment
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="123"/>
+        android:id="@+id/fragment_weather"
+        android:name="com.tomato830.myweather.weatherFragment"/>
 
 </androidx.appcompat.widget.LinearLayoutCompat>

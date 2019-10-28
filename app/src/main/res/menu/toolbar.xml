@@ -6,4 +6,5 @@
         app:showAsAction="ifRoom"
         android:icon="@drawable/search"
         android:title="search_city"/>
+
 </menu>
