@@ -153,19 +153,8 @@ public class MainActivity extends AppCompatActivity {
                 swipeRefreshLayout.setRefreshing(false);
             }
         });
-        getBingPic();
-        //进入时自动刷新
         swipeRefreshLayout.setRefreshing(true);
-        swipeRefreshLayout.post(new Runnable() {
-            @Override
-            public void run() {
-                String[] weatherType={"now","forecast","lifestyle"};
-                for (int i=0;i<weatherType.length;++i){
-                    searchWeather(cid,weatherType[i],MainActivity.this);
-                }
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
+        init();
     }
 
     @Override
@@ -217,7 +206,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 e.printStackTrace();
-                Toast.makeText(context,"加载天气失败",Toast.LENGTH_SHORT).show();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(context,"加载天气失败",Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             @Override
@@ -385,5 +379,20 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    public void init(){
+        getBingPic();
+        //进入时自动刷新
+        swipeRefreshLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                String[] weatherType={"now","forecast","lifestyle"};
+                for (int i=0;i<weatherType.length;++i){
+                    searchWeather(cid,weatherType[i],MainActivity.this);
+                }
+            }
+        });
+        swipeRefreshLayout.setRefreshing(false);
     }
 }
